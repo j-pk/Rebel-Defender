@@ -4,6 +4,7 @@ import pygame
 from bullet import Bullet
 from enemy import Enemy
 from random import randrange, choice
+from time import sleep
 
 
 def check_events(game_settings, screen, ship, bullets):
@@ -55,7 +56,7 @@ def check_keyup_events(event, ship):
         ship.moving_backward = False
 
 
-def update_bullets(bullets):
+def update_bullets(game_settings, screen, ship, enemies, bullets):
     """
     Update position of bullets and get rid of old bullets
     :param bullets:
@@ -63,10 +64,21 @@ def update_bullets(bullets):
     """
     bullets.update()
 
+    check_bullet_collisions(game_settings, screen, ship, enemies, bullets)
+
     # Remove bullets as they disappear
     for bullet in bullets.copy():
         if bullet.rect.bottom <= 0:
             bullets.remove(bullet)
+
+
+def check_bullet_collisions(game_settings, screen, ship, enemies, bullets):
+    # Check for bullets that hit an enemy
+    collisions = pygame.sprite.groupcollide(bullets, enemies, True, True)
+
+    if len(enemies) == 0:
+        bullets.empty()
+        create_fleet(game_settings, screen, ship, enemies)
 
 
 def move_and_draw_stars(starfield, screen, game_settings):
@@ -169,7 +181,40 @@ def change_fleet_direction(game_settings, enemies):
     game_settings.fleet_direction *= -1
 
 
-def update_enemies(game_settings, enemies):
+def ship_hit(game_settings, stats, screen, ship, enemies, bullets):
+    if stats.ships_left > 0:
+        # Respond to ship being hit by an enemy
+        stats.ships_left = -1
+
+        # Empty the list of enemies and bullets
+        enemies.empty()
+        bullets.empty()
+
+        # Create a new fleet
+        create_fleet(game_settings, screen, ship, enemies)
+        ship.center_ship()
+
+        # Pause
+        sleep(0.5)
+    else:
+        stats.game_active = False
+
+
+def check_enemies_bottom(game_settings, stats, screen, ship, enemies, bullets):
+    # Check if enemies reach the bottom of the screen
+    screen_rect = screen.get_rect()
+    for enemy in enemies.sprites():
+        if enemy.rect.bottom >= screen_rect.bottom:
+            ship_hit(game_settings, stats, screen, ship, enemies, bullets)
+            break
+
+
+def update_enemies(game_settings, stats, screen, ship, enemies, bullets):
     # Update the position of all enemies
     check_fleet_edges(game_settings, enemies)
+    check_enemies_bottom(game_settings, stats, screen, ship, enemies, bullets)
     enemies.update()
+
+    # Detect enemy-ship collisions
+    if pygame.sprite.spritecollideany(ship, enemies):
+        ship_hit(game_settings, stats, screen, ship, enemies, bullets)

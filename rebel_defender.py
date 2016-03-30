@@ -5,6 +5,7 @@ from pygame.sprite import Group
 from settings import Settings
 from ship import Ship
 from starfield import Starfield
+from game_stats import GameStats
 import game_functions as gf
 
 
@@ -17,6 +18,9 @@ def run_game():
     screen = pygame.display.set_mode((game_settings.screen_width, game_settings.screen_height))
     pygame.display.set_caption("Rebel Defender")
     clock = pygame.time.Clock()
+
+    # Store game statistics
+    stats = GameStats(game_settings)
 
     # Make a ship
     ship = Ship(game_settings, screen)
@@ -36,9 +40,12 @@ def run_game():
         clock.tick(50)
 
         gf.check_events(game_settings, screen, ship, bullets)
-        ship.update()
-        gf.update_bullets(bullets)
-        gf.update_enemies(game_settings, enemies)
+
+        if stats.game_active:
+            ship.update()
+            gf.update_bullets(game_settings, screen, ship, enemies, bullets)
+            gf.update_enemies(game_settings, stats, screen, ship, enemies, bullets)
+
         gf.update_screen(game_settings, screen, starfield, ship, enemies, bullets)
 
 run_game()
