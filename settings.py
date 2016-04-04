@@ -11,7 +11,7 @@ class Settings:
         self.ship_limit = 3
 
         # Enemy settings
-        self.fleet_drop_speed = 2000
+        self.fleet_drop_speed = 20
 
         # Bullet settings
         self.bullet_width = 3
